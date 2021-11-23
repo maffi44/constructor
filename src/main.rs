@@ -172,7 +172,7 @@ fn create_shaders() -> (&'static str, &'static str) {
 
     float sd_sphere(vec3 p) {
 
-        return length(p - vec3(0.0, 1.0, 5.0)) - 1.0;
+        return length(p - vec3(0.0, 1.0, 3.0)) - 1.0;
     }
 
     float get_dist(vec3 point_from) {
@@ -199,7 +199,7 @@ fn create_shaders() -> (&'static str, &'static str) {
             marching_point = marching_point + (dist_to_surf * camera.ray_direction);
         }
 
-        return dist_to_surf;
+        return full_dist;
     }
 
     void main() {
@@ -207,7 +207,7 @@ fn create_shaders() -> (&'static str, &'static str) {
 
         Camera camera = Camera( vec3(0.0, 1.0, 0.0), normalize(vec3(uv_coord, 1.0)) );
 
-        color = vec4(vec3(ray_march(camera)), 1.0);
+        color = vec4(vec3(ray_march(camera) / 50), 1.0);
     }
     "#;
 
