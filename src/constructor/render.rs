@@ -59,21 +59,23 @@ impl FrameInput {
     
     fn calculate_data(&mut self) -> ShaderData {
 
+        let speed = 200.0_f32;
+
         let delta = self.delta_time.elapsed().unwrap().as_secs_f32();
 
         let mut movement_vector = [0.0, 0.0, 0.0];
 
         if self.w_pressed {
-            movement_vector[2] += 150. * delta;
+            movement_vector[2] += speed * delta;
         };
         if self.s_pressed {
-            movement_vector[2] -= 150. * delta;
+            movement_vector[2] -= speed * delta;
         };
         if self.a_pressed {
-            movement_vector[0] -= 150. * delta;
+            movement_vector[0] -= speed * delta;
         };
         if self.d_pressed {
-            movement_vector[0] += 150. * delta;
+            movement_vector[0] += speed * delta;
         };
 
         if self.mouse_button3_pressed {
@@ -144,12 +146,24 @@ fn create_buffers(display: &Display) -> (VertexBuffer<Vertex>, IndexBuffer<u8>) 
     (vertex_buffer, indices_buffer)
 }
 
+use std::env;
 
 
 fn create_shaders() -> (String, String) {
 
+    let mut args: Vec<String> = env::args().collect();
+
     let mut vertex_file = fs::File::open("shaders/vertex_shader.vert").unwrap();
-    let mut fragment_file = fs::File::open("shaders/fragment_shader.frag").unwrap();
+    let mut fragment_file: fs::File;
+
+    if args.len() > 1 {
+        args[1] = String::from("shaders/") + &args[1];
+        fragment_file = fs::File::open(args[1].as_str()).unwrap();
+    } else {
+        fragment_file = fs::File::open("shaders/fragment_shader.frag").unwrap();
+    }
+
+    
 
     let mut vertex_shader_src = String::new();
     let mut fragment_shader_src = String::new();
@@ -166,7 +180,7 @@ fn create_context() -> (Display, glium::glutin::event_loop::EventLoop<()>) {
 
         // 2. Parameters for building the Window.
         let wb = glium::glutin::window::WindowBuilder::new()
-            .with_inner_size(glium::glutin::dpi::LogicalSize::new(1024.0, 768.0))
+            .with_inner_size(glium::glutin::dpi::LogicalSize::new(800.0, 600.0))
             .with_title("Constructor");
     
         // 3. Parameters for building the OpenGL context.

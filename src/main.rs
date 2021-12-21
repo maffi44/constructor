@@ -68,6 +68,15 @@ fn main() {
                                         },
                                     }
                                 },
+                                glium::glutin::event::MouseButton::Left => {
+                                    match state {
+                                        glium::glutin::event::ElementState::Pressed => {render_data.frame_input.mouse_button3_pressed = true},
+                                        glium::glutin::event::ElementState::Released => {
+                                            render_data.frame_input.mouse_button3_pressed = false;
+                                            render_data.frame_input.mouse_button3_first_click = true;
+                                        },
+                                    }
+                                },
                                 _ => {},
                             }
                         },
