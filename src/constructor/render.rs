@@ -9,6 +9,7 @@ use std::io::Read;
 use std::time;
 use std::fs;
 
+
 #[derive(Clone, Copy)]
 struct Vertex {
     position: [f32; 2],
@@ -17,12 +18,23 @@ struct Vertex {
 
 implement_vertex!(Vertex, position, coordinates);
 
-struct ShaderData {
-    width_coefficient: f32,
+
+struct ShaderToyInput {
+    iResolution: [f32; 3],
+    iTime: f32,
+    iTimeDelta: f32,
+    iFrame: i32,
+    iFrameRate: f32,
+    iMouse: [f32; 4],
+}
+
+struct ShaderInput {
+    aspect: f32,
     camera_position: [f32; 3],
     rotation_matrix: [[f32; 3]; 3],
-    time: f32,
+    shader_toy_input: ShaderToyInput,
 }
+
 
 pub struct RenderData {
     pub frame_input: FrameInput,
@@ -32,6 +44,7 @@ pub struct RenderData {
     indices_buffer: IndexBuffer<u8>,
     
 }
+
 
 pub struct FrameInput {
     pub mouse_input_x: f32,
@@ -55,9 +68,10 @@ pub struct FrameInput {
     pub saved_mouse_input_y: f32,
 }
 
+
 impl FrameInput {
     
-    fn calculate_data(&mut self) -> ShaderData {
+    fn calculate_data(&mut self) -> ShaderInput {
 
         let speed = 200.0_f32;
 
@@ -115,17 +129,25 @@ impl FrameInput {
         if self.camera_position[1] < 0.1 {self.camera_position[1] = 0.1};
 
 
-        ShaderData {
-           width_coefficient: self.display_width as f32 / self.display_height as f32,
+        ShaderInput {
+           aspect: self.display_width as f32 / self.display_height as f32,
 
            camera_position: self.camera_position,
 
            rotation_matrix: rotation_matrix,
 
-           time: self.time.elapsed().unwrap().as_secs_f32(),
+           shader_toy_input: ShaderToyInput {
+               iResolution: [self.display_width as f32, self.display_height as f32, 1.0],
+               iTime: self.time.elapsed().unwrap().as_secs_f32(),
+               iTimeDelta: delta,
+               iFrame: 0, // <========== FIX THIS
+               iFrameRate: 0.0, // <========== FIX THIS
+               iMouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0] // <========== fix W ans Z cooedinates
+            },
         }
     }
 }
+
 
 fn create_buffers(display: &Display) -> (VertexBuffer<Vertex>, IndexBuffer<u8>) {
     let shape = vec![
@@ -153,17 +175,48 @@ fn create_shaders() -> (String, String) {
 
     let mut args: Vec<String> = env::args().collect();
 
-    let mut vertex_file = fs::File::open("shaders/vertex_shader.vert").unwrap();
     let mut fragment_file: fs::File;
 
     if args.len() > 1 {
-        args[1] = String::from("shaders/") + &args[1];
-        fragment_file = fs::File::open(args[1].as_str()).unwrap();
-    } else {
-        fragment_file = fs::File::open("shaders/fragment_shader.frag").unwrap();
-    }
+        let open_result = fs::File::open(args[1].as_str());
 
-    
+        match open_result {
+
+            Ok(file) => fragment_file = file,
+
+            Err(_) =>
+            {
+                args[1] = String::from("shaders/") + &args[1];
+                fragment_file = fs::File::open(args[1].as_str()).unwrap();
+            },
+        }
+    } else {
+        let open_result = fs::File::open("fragment_shader.frag");
+        
+        match open_result {
+
+            Ok(file) =>
+            {
+                fragment_file = file
+            },
+            Err(_) =>
+            {
+                fragment_file = fs::File::open("shaders/fragment_shader.frag").unwrap();
+            },
+        }
+    }
+    let open_file = fs::File::open("vertex_shader.vert");
+    let mut vertex_file: fs::File;
+    match open_file {
+        Ok(file) =>
+        {
+            vertex_file = file;
+        },
+        Err(_) =>
+        {
+            vertex_file = fs::File::open("shaders/vertex_shader.vert").unwrap();
+        },
+    }
 
     let mut vertex_shader_src = String::new();
     let mut fragment_shader_src = String::new();
@@ -173,6 +226,7 @@ fn create_shaders() -> (String, String) {
 
     (vertex_shader_src, fragment_shader_src)
 }
+
 
 fn create_context() -> (Display, glium::glutin::event_loop::EventLoop<()>) {
         // 1. The **winit::EventsLoop** for handling events.
@@ -192,6 +246,7 @@ fn create_context() -> (Display, glium::glutin::event_loop::EventLoop<()>) {
 
         (display, events_loop)
 }
+
 
 pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_loop::EventLoop<()>) {
 
@@ -244,21 +299,28 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
     )
 }
 
+
 pub fn render_frame(render_data: &mut RenderData) {
 
     let mut frame = render_data.display.draw();
 
-    let frame_data = render_data.frame_input.calculate_data();
+    let shader_input = render_data.frame_input.calculate_data();
 
     frame.draw(
         &render_data.vertex_buffer,
         &render_data.indices_buffer,
         &render_data.program,
         &uniform! {
-            width_coefficient: frame_data.width_coefficient,
-            camera_position: frame_data.camera_position,
-            rotation_matrix: frame_data.rotation_matrix,
-            time: frame_data.time,
+            aspect: shader_input.aspect,
+            camera_position: shader_input.camera_position,
+            rotation_matrix: shader_input.rotation_matrix,
+            iResolution: shader_input.shader_toy_input.iResolution,
+            iTime: shader_input.shader_toy_input.iTime,
+            iTimeDelta: shader_input.shader_toy_input.iTimeDelta,
+            iFrame: shader_input.shader_toy_input.iFrame,
+            iFrameRate: shader_input.shader_toy_input.iFrameRate,
+            iMouse: shader_input.shader_toy_input.iMouse,
+
         },
         &glium::draw_parameters::DrawParameters::default()
     ).unwrap();

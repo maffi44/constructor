@@ -1,20 +1,21 @@
 #version 140
 
-uniform float width_coefficient;
+uniform float aspect;
 uniform vec3 camera_position;
 uniform mat3 rotation_matrix;
-uniform float time;
+uniform vec3 iResolution;
+uniform float iTime;
+uniform float iTimeDelta;
+uniform int iFrame;
+uniform float iFrameRate;
+uniform vec4 iMouse;
 
+#define time iTime
 #define MAX_STEPS 100
 #define MIN_DIST 0.01
 #define MAX_DIST 200.
-in vec2 coord;
-out vec4 output_color;
-
-struct Camera {
-    vec3 position;
-    vec3 ray_direction;
-};
+in vec2 fragCoord;
+out vec4 fragColor;
 
 float sd_capsule(vec3 p, vec3 b, float radius) {
 
@@ -120,7 +121,7 @@ float get_lighting(vec3 point) {
 }
 
 void main() {
-    vec2 uv_coord = vec2(coord.x * width_coefficient, coord.y); 
+    vec2 uv_coord = vec2(fragCoord.x * aspect, fragCoord.y); 
     
     vec3 ray_direction = normalize(vec3(uv_coord, 1.0));
 
@@ -130,5 +131,5 @@ void main() {
 
     float color = get_lighting(camera_position + ray_direction * dist);
 
-    output_color = vec4(vec3(color), 1.0);
+    fragColor = vec4(vec3(color), 1.0);
 }
