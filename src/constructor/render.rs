@@ -20,12 +20,12 @@ implement_vertex!(Vertex, position, coordinates);
 
 
 struct ShaderToyInput {
-    iResolution: [f32; 3],
-    iTime: f32,
-    iTimeDelta: f32,
-    iFrame: i32,
-    iFrameRate: f32,
-    iMouse: [f32; 4],
+    i_resolution: [f32; 3],
+    i_time: f32,
+    i_time_delta: f32,
+    i_frame: i32,
+    i_frame_rate: f32,
+    i_mouse: [f32; 4],
 }
 
 struct ShaderInput {
@@ -137,12 +137,12 @@ impl FrameInput {
            rotation_matrix: rotation_matrix,
 
            shader_toy_input: ShaderToyInput {
-               iResolution: [self.display_width as f32, self.display_height as f32, 1.0],
-               iTime: self.time.elapsed().unwrap().as_secs_f32(),
-               iTimeDelta: delta,
-               iFrame: 0, // <========== FIX THIS
-               iFrameRate: 0.0, // <========== FIX THIS
-               iMouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0] // <========== fix W ans Z cooedinates
+               i_resolution: [self.display_width as f32, self.display_height as f32, 1.0],
+               i_time: self.time.elapsed().unwrap().as_secs_f32(),
+               i_time_delta: delta,
+               i_frame: 0, // <========== FIX THIS
+               i_frame_rate: 0.0, // <========== FIX THIS
+               i_mouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0] // <========== fix W ans Z cooedinates
             },
         }
     }
@@ -151,9 +151,9 @@ impl FrameInput {
 
 fn create_buffers(display: &Display) -> (VertexBuffer<Vertex>, IndexBuffer<u8>) {
     let shape = vec![
-        Vertex { position: [-1.0, 1.0], coordinates: [0.0, 0.0] },
+        Vertex { position: [-1.0, 1.0], coordinates: [0.0, 1.0] },
         Vertex { position: [1.0, 1.0], coordinates: [1.0, 1.0] },
-        Vertex { position: [-1.0, -1.0], coordinates: [0.0, 1.0] },
+        Vertex { position: [-1.0, -1.0], coordinates: [0.0, 0.0] },
         Vertex { position: [1.0, -1.0], coordinates: [1.0, 0.0] },
     ];
 
@@ -314,12 +314,12 @@ pub fn render_frame(render_data: &mut RenderData) {
             aspect: shader_input.aspect,
             camera_position: shader_input.camera_position,
             rotation_matrix: shader_input.rotation_matrix,
-            iResolution: shader_input.shader_toy_input.iResolution,
-            iTime: shader_input.shader_toy_input.iTime,
-            iTimeDelta: shader_input.shader_toy_input.iTimeDelta,
-            iFrame: shader_input.shader_toy_input.iFrame,
-            iFrameRate: shader_input.shader_toy_input.iFrameRate,
-            iMouse: shader_input.shader_toy_input.iMouse,
+            iResolution: shader_input.shader_toy_input.i_resolution,
+            iTime: shader_input.shader_toy_input.i_time,
+            iTimeDelta: shader_input.shader_toy_input.i_time_delta,
+            iFrame: shader_input.shader_toy_input.i_frame,
+            iFrameRate: shader_input.shader_toy_input.i_frame_rate,
+            iMouse: shader_input.shader_toy_input.i_mouse,
 
         },
         &glium::draw_parameters::DrawParameters::default()

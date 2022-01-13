@@ -17,6 +17,12 @@ uniform vec4 iMouse;
 in vec2 fragCoord;
 out vec4 fragColor;
 
+mat2 rotate(float angle) {
+    float si = sin(angle);
+    float co = cos(angle);
+    return mat2(co, -si, si, co);
+}
+
 float sd_capsule(vec3 p, vec3 b, float radius) {
 
     float d = dot(b, p) / dot(b, b);
@@ -53,11 +59,24 @@ float sd_cylinder(vec3 ap, vec3 ab, float radius) {
 
 
 float get_dist(vec3 p) {
+
+    vec3 sphere_point1 = p - vec3(0.0, 5.0, 5.0);
+    sphere_point1.y *= sin(iTime) * 3. + 1.;
+
     float dist_sphere = min(
-        sd_sphere(p - vec3(0.0, 5.0, 5.0), 2.0),
-        sd_sphere(p - vec3(2.0, 7.0, 2.0 * sin(time)), 1.0)
+        sd_sphere(sphere_point1, 2.0),
+        sd_sphere((p - vec3(2.0, 7.0, 2.0 * sin(time))), 1.0)
     );
-    float dist_capsule = sd_capsule(p - vec3(-2.0, 2.0, 0.0), vec3(0.0, 2.0, 2.0), 1.0);
+
+
+    vec3 caplsule_point1 = p;
+    caplsule_point1.xz *= rotate(iTime);
+    caplsule_point1 -= vec3(-2.0, 2.0, 0.0);
+    caplsule_point1.xy *= rotate(iTime);
+    vec3 caplsule_point2 = vec3(0.0, 2.0, 2.0);
+    caplsule_point2.xz *= rotate(iTime);
+
+    float dist_capsule = sd_capsule(caplsule_point1, caplsule_point2, 1.0);
 
     float dist = min(dist_capsule, dist_sphere);
 
@@ -121,7 +140,8 @@ float get_lighting(vec3 point) {
 }
 
 void main() {
-    vec2 uv_coord = (((fragCoord / iResolution.xy) - 0.5) * 2); 
+    vec2 uv_coord = (((fragCoord / iResolution.xy) - 0.5) * 2);
+    uv_coord.x *= iResolution.x / iResolution.y; 
     
     vec3 ray_direction = normalize(vec3(uv_coord, 1.0));
 
