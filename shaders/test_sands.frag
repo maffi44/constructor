@@ -1,10 +1,17 @@
-uniform float width_coefficient;
+#version 420
+
+uniform float aspect;
 uniform vec3 camera_position;
 uniform mat3 rotation_matrix;
-uniform float time;
+uniform vec3 iResolution;
+uniform float iTime;
+uniform float iTimeDelta;
+uniform int iFrame;
+uniform float iFrameRate;
+uniform vec4 iMouse;
 
-in vec2 coord;
-out vec4 output_color;
+in vec2 fragCoord;
+out vec4 fragColor;
 
 // a study on raymarching, soft-shadows, ao, etc
 // borrowed heavy from others, esp @cabbibo and @iquilezles and more
@@ -14,7 +21,7 @@ const float MAX_TRACE_DISTANCE = 10.0;
 const float INTERSECTION_PRECISION = 0.01;
 const int NUM_OF_TRACE_STEPS = 70;
 
-
+ 
 
 vec3 projOnPlane( vec3 pos, vec3 planePt , vec3 normal){
     
@@ -361,7 +368,7 @@ bool renderRayMarch(vec3 rayOrigin, vec3 rayDirection, out vec3 color ) {
 }
 
 
-void main( out vec4 fragColor, in vec2 fragCoord )
+void main()
 {
 	vec2 p = (-iResolution.xy + 2.0*fragCoord.xy)/iResolution.y;
     vec2 m = iMouse.xy/iResolution.xy;

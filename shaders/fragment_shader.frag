@@ -1,4 +1,4 @@
-#version 140
+#version 420
 
 uniform float aspect;
 uniform vec3 camera_position;
@@ -121,7 +121,7 @@ float get_lighting(vec3 point) {
 }
 
 void main() {
-    vec2 uv_coord = vec2(fragCoord.x * aspect, fragCoord.y); 
+    vec2 uv_coord = (((fragCoord / iResolution.xy) - 0.5) * 2); 
     
     vec3 ray_direction = normalize(vec3(uv_coord, 1.0));
 
