@@ -61,7 +61,7 @@ float sd_cylinder(vec3 ap, vec3 ab, float radius) {
 float get_dist(vec3 p) {
 
     vec3 sphere_point1 = p - vec3(0.0, 5.0, 5.0);
-    sphere_point1.y *= sin(iTime) * 3. + 1.;
+    sphere_point1.y *= (sin(iTime) + 2.) * 2.;
 
     float dist_sphere = min(
         sd_sphere(sphere_point1, 2.0),
@@ -76,15 +76,15 @@ float get_dist(vec3 p) {
     vec3 caplsule_point2 = vec3(0.0, 2.0, 2.0);
     caplsule_point2.xz *= rotate(iTime);
 
-    float dist_capsule = sd_capsule(caplsule_point1, caplsule_point2, 1.0);
+    float dist = sd_capsule(caplsule_point1, caplsule_point2, 1.0);
 
-    float dist = min(dist_capsule, dist_sphere);
+    //dist = min(dist, dist_sphere);
 
     dist = min(dist, sd_inf_cylinder(p - vec3(4.0, 0.0, 3.0), 2.0));
 
     //dist = min(dist, sd_torus(p, 3.0, 1.0));
 
-    //dist = min(dist, sd_box(p - vec3(-5.0, 1.0, 0.0), vec3(0.5, 0.5, 2.0)));
+    dist = min(dist, sd_box(p - vec3(-5.0, 1.0, 0.0), vec3(1., 1., 1.)));
 
     //dist = min(dist, sd_cylinder(p - vec3(2.0, 3.0, 5.0), vec3(3.0, 5.0, 1.0), 1.5));
 
@@ -122,8 +122,8 @@ float ray_march(vec3 position, vec3 direction) {
 float get_lighting(vec3 point) {
     
     vec3 light_position = vec3(0.0, 17.0, 4.0);
-    
-    light_position.xz += vec2(sin(time) * 10., cos(time) * 5.);
+
+    light_position.xz *= rotate(iTime);
 
     vec3 light_ray = light_position - point;
 
@@ -134,7 +134,7 @@ float get_lighting(vec3 point) {
     float diffuse = mix(0.0, 0.47, dot(light_normal, normal));
 
     if (ray_march(point + normal * MIN_DIST * 2, light_normal) < length(light_ray)) {
-        diffuse *= 0.01;
+        diffuse *= 0.05;
     }
     return diffuse;
 }
@@ -149,7 +149,7 @@ void main() {
 
     float dist = ray_march(camera_position, ray_direction);
 
-    float color = get_lighting(camera_position + ray_direction * dist);
+    float brightness = get_lighting(camera_position + ray_direction * dist);
 
-    fragColor = vec4(vec3(color), 1.0);
+    fragColor = vec4(ray_direction * brightness, 1.0);
 }
