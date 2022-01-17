@@ -11,7 +11,7 @@ uniform float iFrameRate;
 uniform vec4 iMouse;
 
 #define time iTime
-#define MAX_STEPS 100
+#define MAX_STEPS 150
 #define MIN_DIST 0.01
 #define MAX_DIST 200.
 in vec2 fragCoord;
@@ -22,8 +22,14 @@ float sd_sphere(vec3 p, float radius) {
     return length(p) - radius;
 }
 
+float sd_box(vec3 p, vec3 size) {
+    return length(max(abs(p) - size, 0.0));
+}
+
 float get_distance(vec3 p) {
-    return min(p.y, sd_sphere(p - vec3(0., 1., 3.), 1.));
+    vec3 point = p - vec3(0., 1., 2.);
+    point.xyz *= 2.;
+    return sd_box(point, vec3(2., 2., 2.));
 }
 
 vec3 ray_march(vec3 ray_origin, vec3 ray_direction) {
@@ -34,6 +40,10 @@ vec3 ray_march(vec3 ray_origin, vec3 ray_direction) {
         float d = get_distance(ray_origin);
         total_distance += d;
 
+        if (d < 0.) {
+            color.z = 1.;
+            return color;
+        }
         if (d < MIN_DIST) {
             color.x = 1.;
             return color;
@@ -45,12 +55,12 @@ vec3 ray_march(vec3 ray_origin, vec3 ray_direction) {
 
         ray_origin += ray_direction * d;
     }
-    color.z = 1.;
+    //color.z = 1.;
     return color;
 }
 
 void main() {
-    vec2 uv = fragCoord / iResolution.xy - 0.5;
+    vec2 uv = (fragCoord / iResolution.xy - 0.5) * 2.;
     uv.x *= aspect;
 
     vec3 ray_direction = normalize(vec3(uv, 1.));
