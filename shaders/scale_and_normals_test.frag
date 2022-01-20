@@ -34,7 +34,7 @@ float sd_box(vec3 p, vec3 b) {
     return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
 }
 
-float get_distance(vec3 p) {
+float map(vec3 p) {
     vec3 point = p - vec3(0., 1., 2.);
     point.xz *= rotate(iTime);
     float d = sd_box(point, vec3(1., 1.4, 1.));
@@ -43,13 +43,12 @@ float get_distance(vec3 p) {
 }
 
 vec3 get_normal(vec3 p) {
-    float m = 0.001;
-    float d = get_distance(p);
-    return normalize(vec3(
-        d - get_distance(p - vec3(m, 0., 0.)),
-        d - get_distance(p - vec3(0., m, 0.)),
-        d - get_distance(p - vec3(0., 0., m))
-    ));
+    vec2 e = vec2(0.001, -0.001);
+    return normalize(
+        vec3(0.001, 0., 0.) * map(p + vec3(0.001, 0., 0.)) +
+        vec3(-0.0005, 0.001, -0.001) * map(p + vec3(-0.0005, 0.001, -0.001)) +
+        vec3(-0.0005, -0.001, 0.001) * map(p + vec3(-0.0005, -0.001, 0.001))
+    );
 }
 
 vec3 ray_march(vec3 ray_origin, vec3 ray_direction) {
@@ -57,7 +56,7 @@ vec3 ray_march(vec3 ray_origin, vec3 ray_direction) {
     float total_distance = 0.;
 
     for (int i = 0; i < MAX_STEPS; i++) {
-        float d = get_distance(ray_origin);
+        float d = map(ray_origin);
         total_distance += d;
 
         if (d < 0.) {
