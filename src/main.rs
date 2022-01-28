@@ -3,7 +3,7 @@ extern crate glium;
 mod constructor;
 
 use constructor::render::{create_render_data_and_eventloop, render_frame};
-use glium::glutin::event::VirtualKeyCode;
+use glium::glutin::event::{VirtualKeyCode, DeviceEvent, MouseScrollDelta};
 use glium::glutin::event_loop::ControlFlow;
 
 fn main() {
@@ -48,6 +48,8 @@ fn main() {
                                                 glium::glutin::event::ElementState::Pressed => {render_data.frame_input.d_pressed = true},
                                                 glium::glutin::event::ElementState::Released => {render_data.frame_input.d_pressed = false}
                                             },
+                                            VirtualKeyCode::NumpadSubtract => {render_data.frame_input.camera_speed -= 5.}
+                                            VirtualKeyCode::NumpadAdd => {render_data.frame_input.camera_speed += 5.}
                                             _ => {},                                            
                                         }
                                     },
@@ -98,6 +100,20 @@ fn main() {
             },
             glium::glutin::event::Event::MainEventsCleared => {
                 render_data.display.gl_window().window().request_redraw();
+            },
+            glium::glutin::event::Event::DeviceEvent{event, ..} => {
+                match event {
+                    DeviceEvent::MouseWheel{delta} => {
+                        match delta {
+                            MouseScrollDelta::LineDelta(_, y) => {
+                                render_data.frame_input.camera_speed -= y / 2.;
+                                println!("cs is {}", render_data.frame_input.camera_speed);
+                            },
+                            _ => {},
+                        }
+                    },
+                    _ => {},
+                }
             },
             _ => {},
         }

@@ -66,6 +66,7 @@ pub struct FrameInput {
     pub last_angle_y: f32,
     pub saved_mouse_input_x: f32,
     pub saved_mouse_input_y: f32,
+    pub camera_speed: f32,
 }
 
 
@@ -73,23 +74,25 @@ impl FrameInput {
     
     fn calculate_data(&mut self) -> ShaderInput {
 
-        let speed = 200.0_f32;
-
         let delta = self.delta_time.elapsed().unwrap().as_secs_f32();
 
         let mut movement_vector = [0.0, 0.0, 0.0];
 
+        if self.camera_speed < 0. {
+            self.camera_speed = 0.;
+        }
+
         if self.w_pressed {
-            movement_vector[2] += speed * delta;
+            movement_vector[2] += self.camera_speed * delta;
         };
         if self.s_pressed {
-            movement_vector[2] -= speed * delta;
+            movement_vector[2] -= self.camera_speed * delta;
         };
         if self.a_pressed {
-            movement_vector[0] -= speed * delta;
+            movement_vector[0] -= self.camera_speed * delta;
         };
         if self.d_pressed {
-            movement_vector[0] += speed * delta;
+            movement_vector[0] += self.camera_speed * delta;
         };
 
         if self.mouse_button3_pressed {
@@ -285,6 +288,7 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
         last_angle_y: 0.0,
         saved_mouse_input_x: 0.0,
         saved_mouse_input_y: 0.0,
+        camera_speed: 200.,
     };
 
     (
