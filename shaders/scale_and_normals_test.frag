@@ -44,10 +44,21 @@ float map(vec3 p) {
 
 vec3 get_normal(vec3 p) {
     vec2 e = vec2(0.001, -0.001);
+    vec3 a = p + e.yxx;
+    vec3 b = p + e.xyx;
+    vec3 c = p + e.xxy;
+    vec3 d = p + e.yyy;
+
+    float fa = map(a);
+    float fb = map(b);
+    float fc = map(c);
+    float fd = map(d);
+
     return normalize(
-        vec3(0.001, 0., 0.) * map(p + vec3(0.001, 0., 0.)) +
-        vec3(-0.0005, 0.001, -0.001) * map(p + vec3(-0.0005, 0.001, -0.001)) +
-        vec3(-0.0005, -0.001, 0.001) * map(p + vec3(-0.0005, -0.001, 0.001))
+        e.yxx * fa +
+        e.xyx * fb +
+        e.xxy * fc +
+        e.yyy * fd
     );
 }
 
