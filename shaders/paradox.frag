@@ -12,7 +12,8 @@ uniform vec4 iMouse;
 
 #define time iTime
 #define MAX_STEPS 150
-#define MIN_DIST 0.001
+#define PI 3.1415926535897
+#define MIN_DIST 0.0008
 #define MAX_DIST 200.
 in vec2 fragCoord;
 out vec4 fragColor;
@@ -52,15 +53,25 @@ float sd_inf_cylinder(vec3 p, float radius) {
 }
 
 float map(vec3 p) {
-    p -= vec3(-0.5, 0.0, 0.7);
-    vec3 point = p - vec3(0., 1., 2.);
-    point.xz *= rotate(iTime);
-    //point.x *= 4.;
-    float d = sd_box(point, vec3(1., 1.4, 1.));
-    d = max(d, -sd_sphere(p - vec3(0., 3., 1.), 1.3));
-    d = max(d, -sd_torus(p - vec3(0., 0., 3.), 2.3, 1.));
-    d = min(d, sd_sphere(p - vec3(1.5, 0.4, 1.6), 0.9));
-    return d;
+    vec3 point = p - vec3(0., 1., 3.);
+    point.xz *= rotate(iTime / 6.5);
+    point.yz *= rotate(iTime / 12.5);
+
+    // float d = sd_box(point, vec3(1., 1., 1.));
+    // d = max(d, -sd_box(point, vec3(0.5, 0.5, 2.)));
+    // d = max(d, -sd_box(point, vec3(0.5, 2., 0.5)));
+    // d = max(d, -sd_box(point, vec3(2., 0.5, 0.5)));
+    // d = mix(d, sd_sphere(point, 1.37), sin(iTime));
+
+    float d = sd_box(point, vec3(1.49, 0.41, 0.41));
+    d = min(d, sd_box(point, vec3(0.41, 0.41, 1.49)));
+    d = min(d, sd_box(point, vec3(0.41, 1.49, 0.41)));
+    // d = max(d, -sd_box(point, vec3(2., 0.5, 0.5)));
+    d = mix(d, sd_sphere(point, 1.37), sin(iTime * 1.34));
+
+    //float d = sd_sphere(point * sin, 1.37);
+
+    return d * 0.5;
 }
 
 vec3 get_normal(vec3 p) {
@@ -118,11 +129,11 @@ void main() {
     vec3 ray_direction = normalize(vec3(uv, 1.));
     ray_direction *= rotation_matrix;
 
-    vec2 dist_and_color = ray_march(camera_position, ray_direction); 
+    vec2 dist_and_depth = ray_march(camera_position, ray_direction); 
 
-    vec3 normal = get_normal(dist_and_color.x * ray_direction + camera_position);
+    //vec3 normal = get_normal(dist_and_depth.x * ray_direction + camera_position);
 
-    float shade = dot(normal, normalize(vec3(0.2, 1, 0.5))); 
+    //float shade = dot(normal, normalize(vec3(0.2, 1, 0.5))); 
 
-    fragColor = vec4(vec3(dist_and_color.y / MAX_STEPS. * 2, .0, .0), 1.);
+    fragColor = vec4(vec3(dist_and_depth.y / MAX_STEPS. * 1.8, .0, .0), 1.);
 }
