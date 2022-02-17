@@ -56,41 +56,15 @@ float sd_inf_cylinder(vec3 p, float radius) {
 
 float map(vec3 p) {
 
-    vec3 point = p - vec3(0., 1., 3.);
+    vec3 point = p;
+    point.x = mod(point.x, 4.0);
+    point.y = mod(point.y, 4.0);
+   // point.z = mod(point.z, 2.0) - 1.0;
 
-    point.xz *= rotate(iTime / 6.5);
-    point.yz *= rotate(iTime / 12.5);
-
-    point *= (cos(iTime) * 0.1) + 0.5;
-
-    point.x = mod(point.x, 7.0) - 3.5;
-    point.y = mod(point.y, 7.0) - 3.5;
-    point.z = mod(point.z, 7.0) - 3.5;
-
-    point.xz *= rotate(sin(iTime));
-    point.yz *= rotate(cos(iTime));
-
-    point *= (cos(iTime) * 0.2) + 0.5;
+    float d = sd_sphere(point, 1.5);
 
 
-
-    #ifdef BOX
-    float d = sd_box(point, vec3(1., 1., 1.));
-    d = max(d, -sd_box(point, vec3(0.5, 0.5, 2.)));
-    d = max(d, -sd_box(point, vec3(0.5, 2., 0.5)));
-    d = max(d, -sd_box(point, vec3(2., 0.5, 0.5)));
-    d = mix(d, sd_sphere(point, 1.37), sin(iTime * 5.));
-
-    #else
-    float d = sd_box(point, vec3(1.49, 0.41, 0.41));
-    d = min(d, sd_box(point, vec3(0.41, 0.41, 1.49)));
-    d = min(d, sd_box(point, vec3(0.41, 1.49, 0.41)));
-    //d = max(d, -sd_box(point, vec3(2., 0.5, 0.5)));
-    d = mix(d, sd_sphere(point, 1.37), sin(iTime * 1.34));
-    #endif
-    //float d = sd_sphere(point * sin, 1.37);
-
-    return d * 0.9;
+    return d;
 }
 
 vec3 get_normal(vec3 p) {
@@ -155,4 +129,4 @@ void main() {
     float shade = dot(normal, normalize(vec3(0.2, 1, 0.5))); 
 
     fragColor = vec4(vec3(dist_and_depth.y / MAX_STEPS. * 1.8, .0, .0), 1.);
-}   
+}
