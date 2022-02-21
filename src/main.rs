@@ -107,7 +107,6 @@ fn main() {
                         match delta {
                             MouseScrollDelta::LineDelta(_, y) => {
                                 render_data.frame_input.camera_speed -= y / 2.;
-                                println!("cs is {}", render_data.frame_input.camera_speed);
                             },
                             _ => {},
                         }

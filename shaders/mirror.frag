@@ -56,12 +56,21 @@ float sd_inf_cylinder(vec3 p, float radius) {
 
 float map(vec3 p) {
 
-    vec3 point = p;
-    point.x = mod(point.x, 4.0);
-    point.y = mod(point.y, 4.0);
-   // point.z = mod(point.z, 2.0) - 1.0;
+    float d = sd_sphere(p - vec3(60. * sin(iTime), 60. * sin(iTime), 80.), 40.);
 
-    float d = sd_sphere(point, 1.5);
+    vec3 point = p - vec3(0., 0., 6.);
+    //point.xy *= rotate(iTime);
+    float space_mult = 8. * (sin(iTime) + 2.);
+
+    //space_mult = 10.;
+
+    point.x = mod(point.x, space_mult) - space_mult / 2.;
+    point.y = mod(point.y, space_mult) - space_mult / 2.;
+    point.z = mod(point.z, space_mult) - space_mult / 2.;
+
+    d = min(d, sd_sphere(point,  1.5 * (cos(iTime) + 2.)));
+    //float d2 = sd_box(point, vec3(1., 1., 1.));
+    //d = mix(d, d2, (sin(iTime * 2.) + 1.) / 2.);
 
 
     return d;
