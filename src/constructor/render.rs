@@ -208,6 +208,7 @@ fn create_shaders() -> (String, String) {
             },
         }
     }
+    /*
     let open_file = fs::File::open("vertex_shader.vert");
     let mut vertex_file: fs::File;
     match open_file {
@@ -222,13 +223,14 @@ fn create_shaders() -> (String, String) {
     }
 
     let mut vertex_shader_src = String::new();
+    */
     let mut fragment_shader_src = String::new();
     
-    vertex_file.read_to_string(&mut vertex_shader_src).unwrap();
+    //vertex_file.read_to_string(&mut vertex_shader_src).unwrap();
     fragment_file.read_to_string(&mut fragment_shader_src).unwrap();
 
-    /*
-    let mut vertex_shader_src = String::from("#version 140
+    
+    let vertex_shader_src = String::from("#version 140
 
     uniform vec3 iResolution;
     
@@ -240,7 +242,8 @@ fn create_shaders() -> (String, String) {
         fragCoord = coordinates * iResolution.xy;
         gl_Position = vec4(position, 0.0, 1.0);
     }");
-    
+
+    /*
     let mut fragment_shader_src = String::from("#version 420
 
     uniform float aspect;
@@ -380,7 +383,7 @@ fn create_context() -> (Display, glium::glutin::event_loop::EventLoop<()>) {
 
         // 2. Parameters for building the Window.
         let wb = glium::glutin::window::WindowBuilder::new()
-            .with_inner_size(glium::glutin::dpi::LogicalSize::new(800.0, 600.0))
+            .with_inner_size(glium::glutin::dpi::LogicalSize::new(450.0, 450.0))
             .with_title("Constructor");
     
         // 3. Parameters for building the OpenGL context.
