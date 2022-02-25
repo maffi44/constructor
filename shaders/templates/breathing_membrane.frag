@@ -59,16 +59,18 @@ float map(vec3 p) {
     //float d = sd_sphere(p - vec3(60. * sin(iTime), 60. * sin(iTime), 80.), 40.);
 
     vec3 point = p - vec3(0., 0., 6.);
-    //point.xy *= rotate(iTime);
-    float space_mult = 8. * (sin(iTime) + 2.);
+    //point.xy *= rotate(iTime / 10.);
+    float space_mult = 17. * (sin(iTime) / 2. + 0.7);
 
     //space_mult = 10.;
 
     point.x = mod(point.x, space_mult) - space_mult / 2.;
     point.y = mod(point.y, space_mult) - space_mult / 2.;
-    //point.z = mod(point.z, space_mult) - space_mult / 2.;
+    point.z = mod(point.z, space_mult) - space_mult / 2.;
 
-    float d = sd_sphere(point,  0.8 * (cos(iTime) + 2));
+    float d = sd_sphere(point,  0.8 * (cos(iTime) / 2. + 1.8));
+
+
     //float d2 = sd_box(point, vec3(1., 1., 1.));
     //d = mix(d, d2, (sin(iTime * 2.) + 1.) / 2.);
 
@@ -135,7 +137,9 @@ void main() {
 
     vec3 normal = get_normal(dist_and_depth.x * ray_direction + camera_position);
 
-    float shade = dot(normal, normalize(vec3(0.2, 1, 0.5))); 
+    float shade = dot(normal, normalize(vec3(0.2, -1., -0.5)));
+    
+    shade = clamp(shade, 0.4, 1.0);
 
-    fragColor = vec4(vec3(dist_and_depth.y / MAX_STEPS. * 1.8, .0, .0), 1.);
+    fragColor = vec4(vec3(dist_and_depth.y / MAX_STEPS. * shade * 2.), 1.);
 }
