@@ -32,6 +32,7 @@ struct ShaderInput {
     aspect: f32,
     camera_position: [f32; 3],
     rotation_matrix: [[f32; 3]; 3],
+    xyz_change: [f32; 3],
     shader_toy_input: ShaderToyInput,
 }
 
@@ -54,10 +55,17 @@ pub struct FrameInput {
     pub time: time::SystemTime,
     pub delta_time: time::SystemTime,
     pub camera_position: [f32; 3],
+    pub xyz_change: [f32; 3],
     pub w_pressed: bool,
     pub s_pressed: bool,
     pub a_pressed: bool,
     pub d_pressed: bool,
+    pub u_pressed: bool,
+    pub i_pressed: bool,
+    pub o_pressed: bool,
+    pub j_pressed: bool,
+    pub k_pressed: bool,
+    pub l_pressed: bool,
     pub mouse_button3_pressed: bool,
     pub mouse_button3_first_click: bool,
     pub saved_angle_x: f32,
@@ -93,6 +101,26 @@ impl FrameInput {
         };
         if self.d_pressed {
             movement_vector[0] += self.camera_speed * delta;
+        };
+
+        //calculate xyz changing
+        if self.u_pressed {
+            self.xyz_change[0] += 0.01;
+        };
+        if self.j_pressed {
+            self.xyz_change[0] -= 0.01;
+        };
+        if self.i_pressed {
+            self.xyz_change[1] += 0.01;
+        };
+        if self.k_pressed {
+            self.xyz_change[1] -= 0.01;
+        };
+        if self.o_pressed {
+            self.xyz_change[2] += 0.01;
+        };
+        if self.l_pressed {
+            self.xyz_change[2] -= 0.01;
         };
 
         if self.mouse_button3_pressed {
@@ -139,13 +167,15 @@ impl FrameInput {
 
            rotation_matrix: rotation_matrix,
 
+           xyz_change: self.xyz_change,
+
            shader_toy_input: ShaderToyInput {
                i_resolution: [self.display_width as f32, self.display_height as f32, 1.0],
                i_time: self.time.elapsed().unwrap().as_secs_f32(),
                i_time_delta: delta,
-               i_frame: 0, // <========== FIX THIS
-               i_frame_rate: 0.0, // <========== FIX THIS
-               i_mouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0] // <========== fix W ans Z cooedinates
+               i_frame: 0, //                                                             <========== FIX THIS
+               i_frame_rate: 0.0, //                                                      <========== FIX THIS
+               i_mouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0] //             <========== fix W ans Z cooedinates
             },
         }
     }
@@ -422,10 +452,17 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
         time: time::SystemTime::now(),
         delta_time: time::SystemTime::now(),
         camera_position: [0.0, 1.0, 0.0],
+        xyz_change: [1.0, 1.0, 1.0],
         w_pressed: false,
         s_pressed: false,
         a_pressed: false,
         d_pressed: false,
+        u_pressed: false,
+        i_pressed: false,
+        o_pressed: false,
+        j_pressed: false,
+        k_pressed: false,
+        l_pressed: false,
         mouse_button3_pressed: false,
         mouse_button3_first_click: true,
         saved_angle_x: 0.0,
@@ -464,6 +501,7 @@ pub fn render_frame(render_data: &mut RenderData) {
             aspect: shader_input.aspect,
             camera_position: shader_input.camera_position,
             rotation_matrix: shader_input.rotation_matrix,
+            xyz_change: shader_input.xyz_change,
             iResolution: shader_input.shader_toy_input.i_resolution,
             iTime: shader_input.shader_toy_input.i_time,
             iTimeDelta: shader_input.shader_toy_input.i_time_delta,

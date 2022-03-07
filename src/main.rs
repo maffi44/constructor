@@ -48,8 +48,32 @@ fn main() {
                                                 glium::glutin::event::ElementState::Pressed => {render_data.frame_input.d_pressed = true},
                                                 glium::glutin::event::ElementState::Released => {render_data.frame_input.d_pressed = false}
                                             },
-                                            VirtualKeyCode::NumpadSubtract => {render_data.frame_input.camera_speed -= 5.}
-                                            VirtualKeyCode::NumpadAdd => {render_data.frame_input.camera_speed += 5.}
+                                            VirtualKeyCode::NumpadSubtract => {render_data.frame_input.camera_speed -= 5.},
+                                            VirtualKeyCode::NumpadAdd => {render_data.frame_input.camera_speed += 5.},
+                                            VirtualKeyCode::U => match state {
+                                                glium::glutin::event::ElementState::Pressed => {render_data.frame_input.u_pressed = true},
+                                                glium::glutin::event::ElementState::Released => {render_data.frame_input.u_pressed = false}
+                                            },
+                                            VirtualKeyCode::I => match state {
+                                                glium::glutin::event::ElementState::Pressed => {render_data.frame_input.i_pressed = true},
+                                                glium::glutin::event::ElementState::Released => {render_data.frame_input.i_pressed = false}
+                                            },
+                                            VirtualKeyCode::O => match state {
+                                                glium::glutin::event::ElementState::Pressed => {render_data.frame_input.o_pressed = true},
+                                                glium::glutin::event::ElementState::Released => {render_data.frame_input.o_pressed = false}
+                                            },
+                                            VirtualKeyCode::J => match state {
+                                                glium::glutin::event::ElementState::Pressed => {render_data.frame_input.j_pressed = true},
+                                                glium::glutin::event::ElementState::Released => {render_data.frame_input.j_pressed = false}
+                                            },
+                                            VirtualKeyCode::K => match state {
+                                                glium::glutin::event::ElementState::Pressed => {render_data.frame_input.k_pressed = true},
+                                                glium::glutin::event::ElementState::Released => {render_data.frame_input.k_pressed = false}
+                                            },
+                                            VirtualKeyCode::L => match state {
+                                                glium::glutin::event::ElementState::Pressed => {render_data.frame_input.l_pressed = true},
+                                                glium::glutin::event::ElementState::Released => {render_data.frame_input.l_pressed = false}
+                                            },
                                             _ => {},                                            
                                         }
                                     },

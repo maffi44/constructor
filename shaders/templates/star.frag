@@ -3,6 +3,7 @@
 uniform float aspect;
 uniform vec3 camera_position;
 uniform mat3 rotation_matrix;
+uniform vec3 xyz_change;
 uniform vec3 iResolution;
 uniform float iTime;
 uniform float iTimeDelta;
@@ -56,7 +57,7 @@ float sd_inf_cylinder(vec3 p, float radius) {
 
 float map(vec3 p) {
 
-    vec3 point = p - vec3(0., 1., 5.);
+    p -= vec3(0., 1., 5.);
 
     // point.xz *= rotate(iTime / 6.5);
     // point.yz *= rotate(iTime / 12.5);
@@ -89,13 +90,29 @@ float map(vec3 p) {
     d = mix(d, sd_sphere(point, 1.37 * min(sin(atan(point.x, point.y) * 12.) / 2. + 1.5, sin(atan(point.x, point.z) * 12.) / 2. + 1.5)), sin(iTime * 1.34));
     #endif
     */
+
+    /*
     float num_of_pikes = 3 * (sin(iTime / 2.) / 2. + 1.5); 
     float d = sd_sphere(point, 1.37 * min(
         min(sin(atan(point.x, point.y) * num_of_pikes) / 2. + 1.5, sin(atan(point.x, point.z) * num_of_pikes) / 2. + 1.5),
             sin(atan(point.z, point.y) * num_of_pikes) / 2. + 1.5));
+
+    */
+
+
     //float d = sd_sphere(point * sin, 1.37);
 
-    return d * 0.15;
+    //float n = 1.3 * ((sin(iTime) / 2.) + 1.5);
+
+    //n = 1.;
+
+    float a = -abs(sin(atan(p.x, p.y) * xyz_change.x)) + 1.0;
+    float b = -abs(sin(atan(p.z, p.x) * xyz_change.y)) + 1.0;
+    float c = -abs(sin(atan(p.y, p.z) * xyz_change.z)) + 1.0;
+
+    float d = sd_sphere(p, 2. - max(a, max(b, c)));
+
+    return d * 0.13;
 }
 
 vec3 get_normal(vec3 p) {
