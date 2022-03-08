@@ -19,6 +19,31 @@ uniform vec4 iMouse;
 in vec2 fragCoord;
 out vec4 fragColor;
 
+vec3 plane = vec3(0., 1., 0.);
+
+vec3 planes[20] = {
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane,
+    plane
+};
+
 #define BO
 
 
@@ -59,58 +84,15 @@ float map(vec3 p) {
 
     p -= vec3(0., 1., 5.);
 
-    // point.xz *= rotate(iTime / 6.5);
-    // point.yz *= rotate(iTime / 12.5);
+    int n = 1;
 
-    // point *= (cos(iTime) * 0.1) + 0.5;
+    float d = sd_sphere(p, 2.);
 
-    // point.x = mod(point.x, 7.0) - 3.5;
-    // point.y = mod(point.y, 7.0) - 3.5;
-    // point.z = mod(point.z, 7.0) - 3.5;
+    for (int i = 0; i < n; i++) {
+        d = max(d, planes[i].y);
+    }
 
-    // point.xz *= rotate(sin(iTime));
-    // point.yz *= rotate(cos(iTime));
-
-    //point *= (cos(iTime) * 0.2) + 0.5;
-
-
-/*
-    #ifdef BOX
-    float d = sd_box(point, vec3(1., 1., 1.));
-    d = max(d, -sd_box(point, vec3(0.5, 0.5, 2.)));
-    d = max(d, -sd_box(point, vec3(0.5, 2., 0.5)));
-    d = max(d, -sd_box(point, vec3(2., 0.5, 0.5)));
-    d = mix(d, sd_sphere(point, 1.37), sin(iTime * 5.));
-
-    #else
-    float d = sd_box(point, vec3(1.49, 0.41, 0.41));
-    d = min(d, sd_box(point, vec3(0.41, 0.41, 1.49)));
-    d = min(d, sd_box(point, vec3(0.41, 1.49, 0.41)));
-    //d = max(d, -sd_box(point, vec3(2., 0.5, 0.5)));
-    d = mix(d, sd_sphere(point, 1.37 * min(sin(atan(point.x, point.y) * 12.) / 2. + 1.5, sin(atan(point.x, point.z) * 12.) / 2. + 1.5)), sin(iTime * 1.34));
-    #endif
-    */
-
-    /*
-    float num_of_pikes = 3 * (sin(iTime / 2.) / 2. + 1.5); 
-    float d = sd_sphere(point, 1.37 * min(
-        min(sin(atan(point.x, point.y) * num_of_pikes) / 2. + 1.5, sin(atan(point.x, point.z) * num_of_pikes) / 2. + 1.5),
-            sin(atan(point.z, point.y) * num_of_pikes) / 2. + 1.5));
-
-    */
-
-
-    //float d = sd_sphere(point * sin, 1.37);
-
-    float n = 1.3 * ((sin(iTime) / 2.) + 1.5);
-
-    float xy = abs(sin(atan(p.x, p.y) * xyz_change.x * n));
-    float xz = abs(sin(atan(p.z, p.x) * xyz_change.y * n));
-    float yz = abs(sin(atan(p.z, p.y) * xyz_change.z * n));
-
-    float d = sd_sphere(p, 2. - max(xy, xz));
-
-    return d * 0.1;
+    return d;
 }
 
 vec3 get_normal(vec3 p) {
