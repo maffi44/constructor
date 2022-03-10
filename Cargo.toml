@@ -8,3 +8,5 @@ edition = "2018"
 [dependencies]
 glium = "*"
 glm = "*"
+rand = "0.8"
+glam = "0.20"

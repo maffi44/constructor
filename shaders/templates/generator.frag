@@ -4,6 +4,7 @@ uniform float aspect;
 uniform vec3 camera_position;
 uniform mat3 rotation_matrix;
 uniform vec3 xyz_change;
+uniform vec3 planes[20];
 uniform vec3 iResolution;
 uniform float iTime;
 uniform float iTimeDelta;
@@ -18,31 +19,6 @@ uniform vec4 iMouse;
 #define MAX_DIST 200.
 in vec2 fragCoord;
 out vec4 fragColor;
-
-vec3 plane = vec3(0., 1., 0.);
-
-vec3 planes[20] = {
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane,
-    plane
-};
 
 #define BO
 
@@ -84,12 +60,12 @@ float map(vec3 p) {
 
     p -= vec3(0., 1., 5.);
 
-    int n = 1;
+    int n = 5;
 
     float d = sd_sphere(p, 2.);
 
     for (int i = 0; i < n; i++) {
-        d = max(d, planes[i].y);
+        d = max(d, dot(planes[i], p - planes[i]));
     }
 
     return d;

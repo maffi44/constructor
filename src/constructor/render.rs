@@ -4,11 +4,12 @@ use glium::Program;
 use glium::Surface;
 use glium::VertexBuffer;
 use glm::{cos, sin};
+use rand::Rng;
 use std::f32::consts::PI;
 use std::io::Read;
 use std::time;
 use std::fs;
-
+use rand;
 
 #[derive(Clone, Copy)]
 struct Vertex {
@@ -159,6 +160,28 @@ impl FrameInput {
         
         if self.camera_position[1] < 0.1 {self.camera_position[1] = 0.1};
 
+        let mut planes = [
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32,  1.0f32, 0.0f32],
+        ];
 
         ShaderInput {
            aspect: self.display_width as f32 / self.display_height as f32,
@@ -180,7 +203,6 @@ impl FrameInput {
         }
     }
 }
-
 
 fn create_buffers(display: &Display) -> (VertexBuffer<Vertex>, IndexBuffer<u8>) {
     let shape = vec![
