@@ -10,6 +10,8 @@ uniform int iFrame;
 uniform float iFrameRate;
 uniform vec4 iMouse;
 
+uniform float powe = 2.0;
+
 #define time iTime
 #define MAX_STEPS 150
 #define PI 3.1415926535897
@@ -54,18 +56,41 @@ float sd_inf_cylinder(vec3 p, float radius) {
     return length(p.xz) - radius;
 }
 
-float map(vec3 p) {
-    vec3 point = p;
+// float map(vec3 p) {
+//     vec3 point = p;
 
-    point.x = mod(point.x, 3.0) - 1.5;
-    point.z += float(floor(point.x * 2));
+//     point.x = mod(point.x, 3.0) - 1.5;
+//     point.z += float(floor(point.x * 2));
 
-    point -= vec3(0., 1., 3.);
-    //point.xz *= rotate(iTime / 1.8);
+//     point -= vec3(0., 1., 3.);
+//     //point.xz *= rotate(iTime / 1.8);
 
-    float d = sd_box(point, vec3(1., 1., 1.));
+//     float d = sd_box(point, vec3(1., 1., 1.));
 
-    return d;
+//     return d;
+// }
+
+float map(vec3 position) {
+    float power = powe + (cos(iTime / 20.0) + 1.0) * 5.0;
+    vec3 p = position;
+    float dr = 1.0;
+    float r;
+
+    for (int i = 0; i < 15; i++) {
+        r = length(p);
+        if (r > 2.0) {
+            break;
+        }
+
+        float theta = acos(p.z / r) * power;
+        float phi = atan(p.y, p.x) * power;
+        float zr = pow(r, power);
+        dr = pow(r, power - 1.0) * power * dr + 1.0;
+
+        p = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+        p += position;
+    }
+    return 0.5 * log(r) * r / dr;
 }
 
 vec3 get_normal(vec3 p) {

@@ -4,12 +4,14 @@ use glium::Program;
 use glium::Surface;
 use glium::VertexBuffer;
 use glm::{cos, sin};
+use image::Pixel;
 use rand::Rng;
 use std::f32::consts::PI;
 use std::io::Read;
 use std::time;
 use std::fs;
 use rand;
+use image;
 
 #[derive(Clone, Copy)]
 struct Vertex {
@@ -44,6 +46,7 @@ pub struct RenderData {
     program: Program,
     vertex_buffer: VertexBuffer<Vertex>,
     indices_buffer: IndexBuffer<u8>,
+    frame_counter: u32,
     
 }
 
@@ -503,6 +506,7 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
             vertex_buffer: vertex_buffer,
             indices_buffer: indices_buffer,
             frame_input: frame_input,
+            frame_counter: 0u32,
         },
         events_loop
     )
@@ -536,6 +540,23 @@ pub fn render_frame(render_data: &mut RenderData) {
     ).unwrap();
 
     frame.finish().unwrap();
+
+    let frame_texture: Vec<Vec<(u8, u8, u8, u8)>> = render_data.display.read_front_buffer().unwrap();
+    // println!("{}, {}", frame_texture.len(), frame_texture[0].len());
+    let image_buffer = image::ImageBuffer::from_fn(
+        render_data.frame_input.display_width,
+        render_data.frame_input.display_height,
+        |x, y| {
+            let (r, g, b, a) = frame_texture[y as usize][x as usize];
+            image::Rgba([r, g, b, a])
+        }
+    );
+
+    let path = format!("{}{}{}", "/home/maffi44/Pictures/fractal/", render_data.frame_counter.to_string().as_str(), ".png");
+
+    image_buffer.save(path).expect("can not save");
     
+    render_data.frame_counter += 1;
+
     render_data.frame_input.delta_time = time::SystemTime::now();
 }
