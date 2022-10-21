@@ -4,14 +4,17 @@ use glium::Program;
 use glium::Surface;
 use glium::VertexBuffer;
 use glm::{cos, sin};
+use image;
 use image::Pixel;
+use rand;
 use rand::Rng;
 use std::f32::consts::PI;
+use std::fs;
 use std::io::Read;
 use std::time;
-use std::fs;
-use rand;
-use image;
+
+const DIS_WIDTH: f32 = 1792.0;
+const DIS_HIEGHT: f32 = 768.0;
 
 #[derive(Clone, Copy)]
 struct Vertex {
@@ -20,7 +23,6 @@ struct Vertex {
 }
 
 implement_vertex!(Vertex, position, coordinates);
-
 
 struct ShaderToyInput {
     i_resolution: [f32; 3],
@@ -36,9 +38,9 @@ struct ShaderInput {
     camera_position: [f32; 3],
     rotation_matrix: [[f32; 3]; 3],
     xyz_change: [f32; 3],
+    static_time: f32,
     shader_toy_input: ShaderToyInput,
 }
-
 
 pub struct RenderData {
     pub frame_input: FrameInput,
@@ -47,9 +49,9 @@ pub struct RenderData {
     vertex_buffer: VertexBuffer<Vertex>,
     indices_buffer: IndexBuffer<u8>,
     frame_counter: u32,
-    
+    is_video: bool,
+    max_video_time: f32,
 }
-
 
 pub struct FrameInput {
     pub mouse_input_x: f32,
@@ -57,6 +59,7 @@ pub struct FrameInput {
     pub display_width: u32,
     pub display_height: u32,
     pub time: time::SystemTime,
+    pub static_time: f32,
     pub delta_time: time::SystemTime,
     pub camera_position: [f32; 3],
     pub xyz_change: [f32; 3],
@@ -82,11 +85,12 @@ pub struct FrameInput {
 }
 
 
-impl FrameInput {
-    
-    fn calculate_data(&mut self) -> ShaderInput {
 
+impl FrameInput {
+    fn calculate_data(&mut self) -> ShaderInput {
         let delta = self.delta_time.elapsed().unwrap().as_secs_f32();
+
+        self.static_time += 0.016666667;
 
         let mut movement_vector = [0.0, 0.0, 0.0];
 
@@ -128,30 +132,47 @@ impl FrameInput {
         };
 
         if self.mouse_button3_pressed {
-
             if self.mouse_button3_first_click {
-                
                 self.mouse_button3_first_click = false;
                 self.saved_angle_x = self.last_angle_x;
                 self.saved_angle_y = self.last_angle_y;
                 self.saved_mouse_input_x = self.mouse_input_x;
                 self.saved_mouse_input_y = self.mouse_input_y;
             }
-            
-            self.last_angle_x = self.saved_angle_x - (((self.saved_mouse_input_x - self.mouse_input_x) / self.display_width as f32) * 4.0);
-            self.last_angle_y = (self.saved_angle_y - ((self.saved_mouse_input_y - self.mouse_input_y) / self.display_height as f32)  * 4.0).clamp(-PI / 2., PI / 2.);
+
+            self.last_angle_x = self.saved_angle_x
+                - (((self.saved_mouse_input_x - self.mouse_input_x) / self.display_width as f32)
+                    * 4.0);
+            self.last_angle_y = (self.saved_angle_y
+                - ((self.saved_mouse_input_y - self.mouse_input_y) / self.display_height as f32)
+                    * 4.0)
+                .clamp(-PI / 2., PI / 2.);
         }
 
         let rotation_matrix = [
-            [cos(self.last_angle_x), sin(self.last_angle_y) * sin(self.last_angle_x), cos(self.last_angle_y) * sin(self.last_angle_x)],
+            [
+                cos(self.last_angle_x),
+                sin(self.last_angle_y) * sin(self.last_angle_x),
+                cos(self.last_angle_y) * sin(self.last_angle_x),
+            ],
             [0.0, cos(self.last_angle_y), -sin(self.last_angle_y)],
-            [-sin(self.last_angle_x), sin(self.last_angle_y) * cos(self.last_angle_x), cos(self.last_angle_y) * cos(self.last_angle_x)],
+            [
+                -sin(self.last_angle_x),
+                sin(self.last_angle_y) * cos(self.last_angle_x),
+                cos(self.last_angle_y) * cos(self.last_angle_x),
+            ],
         ];
 
         let rotated_movement_vector = [
-            movement_vector[0] * rotation_matrix[0][0] + movement_vector[1] * rotation_matrix[0][1] + movement_vector[2] * rotation_matrix[0][2],
-            movement_vector[0] * rotation_matrix[1][0] + movement_vector[1] * rotation_matrix[1][1] + movement_vector[2] * rotation_matrix[1][2],
-            movement_vector[0] * rotation_matrix[2][0] + movement_vector[1] * rotation_matrix[2][1] + movement_vector[2] * rotation_matrix[2][2],
+            movement_vector[0] * rotation_matrix[0][0]
+                + movement_vector[1] * rotation_matrix[0][1]
+                + movement_vector[2] * rotation_matrix[0][2],
+            movement_vector[0] * rotation_matrix[1][0]
+                + movement_vector[1] * rotation_matrix[1][1]
+                + movement_vector[2] * rotation_matrix[1][2],
+            movement_vector[0] * rotation_matrix[2][0]
+                + movement_vector[1] * rotation_matrix[2][1]
+                + movement_vector[2] * rotation_matrix[2][2],
         ];
 
         self.camera_position = [
@@ -160,48 +181,51 @@ impl FrameInput {
             self.camera_position[2] + rotated_movement_vector[2],
         ];
 
-        
-        if self.camera_position[1] < 0.1 {self.camera_position[1] = 0.1};
+        if self.camera_position[1] < 0.1 {
+            self.camera_position[1] = 0.1
+        };
 
         let mut planes = [
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
-            [0.0f32,  1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
+            [0.0f32, 1.0f32, 0.0f32],
         ];
 
         ShaderInput {
-           aspect: self.display_width as f32 / self.display_height as f32,
+            aspect: self.display_width as f32 / self.display_height as f32,
 
-           camera_position: self.camera_position,
+            camera_position: self.camera_position,
 
-           rotation_matrix: rotation_matrix,
+            rotation_matrix: rotation_matrix,
 
-           xyz_change: self.xyz_change,
+            xyz_change: self.xyz_change,
 
-           shader_toy_input: ShaderToyInput {
-               i_resolution: [self.display_width as f32, self.display_height as f32, 1.0],
-               i_time: self.time.elapsed().unwrap().as_secs_f32(),
-               i_time_delta: delta,
-               i_frame: 0, //                                                             <========== FIX THIS
-               i_frame_rate: 0.0, //                                                      <========== FIX THIS
-               i_mouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0] //             <========== fix W ans Z cooedinates
+            static_time: self.static_time,
+
+            shader_toy_input: ShaderToyInput {
+                i_resolution: [self.display_width as f32, self.display_height as f32, 1.0],
+                i_time: self.time.elapsed().unwrap().as_secs_f32(),
+                i_time_delta: delta,
+                i_frame: 0, //                                                             <========== FIX THIS
+                i_frame_rate: 0.0, //                                                      <========== FIX THIS
+                i_mouse: [self.mouse_input_x, self.mouse_input_y, 0.0, 0.0], //             <========== fix W ans Z cooedinates
             },
         }
     }
@@ -209,10 +233,22 @@ impl FrameInput {
 
 fn create_buffers(display: &Display) -> (VertexBuffer<Vertex>, IndexBuffer<u8>) {
     let shape = vec![
-        Vertex { position: [-1.0, 1.0], coordinates: [0.0, 1.0] },
-        Vertex { position: [1.0, 1.0], coordinates: [1.0, 1.0] },
-        Vertex { position: [-1.0, -1.0], coordinates: [0.0, 0.0] },
-        Vertex { position: [1.0, -1.0], coordinates: [1.0, 0.0] },
+        Vertex {
+            position: [-1.0, 1.0],
+            coordinates: [0.0, 1.0],
+        },
+        Vertex {
+            position: [1.0, 1.0],
+            coordinates: [1.0, 1.0],
+        },
+        Vertex {
+            position: [-1.0, -1.0],
+            coordinates: [0.0, 0.0],
+        },
+        Vertex {
+            position: [1.0, -1.0],
+            coordinates: [1.0, 0.0],
+        },
     ];
 
     let vertex_buffer = glium::VertexBuffer::new(display, &shape).unwrap();
@@ -220,17 +256,16 @@ fn create_buffers(display: &Display) -> (VertexBuffer<Vertex>, IndexBuffer<u8>) 
     let indices_buffer = glium::index::IndexBuffer::new(
         display,
         glium::index::PrimitiveType::TrianglesList,
-        &vec![0u8, 1u8, 2u8, 1u8, 3u8, 2u8]
-    ).unwrap();
+        &vec![0u8, 1u8, 2u8, 1u8, 3u8, 2u8],
+    )
+    .unwrap();
 
     (vertex_buffer, indices_buffer)
 }
 
 use std::env;
 
-
 fn create_shaders() -> (String, String) {
-
     let mut args: Vec<String> = env::args().collect();
 
     let mut fragment_file: fs::File;
@@ -239,28 +274,21 @@ fn create_shaders() -> (String, String) {
         let open_result = fs::File::open(args[1].as_str());
 
         match open_result {
-
             Ok(file) => fragment_file = file,
 
-            Err(_) =>
-            {
+            Err(_) => {
                 args[1] = String::from("shaders/") + &args[1];
                 fragment_file = fs::File::open(args[1].as_str()).unwrap();
-            },
+            }
         }
     } else {
         let open_result = fs::File::open("fragment_shader.frag");
-        
-        match open_result {
 
-            Ok(file) =>
-            {
-                fragment_file = file
-            },
-            Err(_) =>
-            {
+        match open_result {
+            Ok(file) => fragment_file = file,
+            Err(_) => {
                 fragment_file = fs::File::open("shaders/fragment_shader.frag").unwrap();
-            },
+            }
         }
     }
     /*
@@ -280,12 +308,14 @@ fn create_shaders() -> (String, String) {
     let mut vertex_shader_src = String::new();
     */
     let mut fragment_shader_src = String::new();
-    
-    //vertex_file.read_to_string(&mut vertex_shader_src).unwrap();
-    fragment_file.read_to_string(&mut fragment_shader_src).unwrap();
 
-    
-    let vertex_shader_src = String::from("#version 140
+    //vertex_file.read_to_string(&mut vertex_shader_src).unwrap();
+    fragment_file
+        .read_to_string(&mut fragment_shader_src)
+        .unwrap();
+
+    let vertex_shader_src = String::from(
+        "#version 140
 
     uniform vec3 iResolution;
     
@@ -296,7 +326,8 @@ fn create_shaders() -> (String, String) {
     void main() {
         fragCoord = coordinates * iResolution.xy;
         gl_Position = vec4(position, 0.0, 1.0);
-    }");
+    }",
+    );
 
     /*
     let mut fragment_shader_src = String::from("#version 420
@@ -310,48 +341,48 @@ fn create_shaders() -> (String, String) {
     uniform int iFrame;
     uniform float iFrameRate;
     uniform vec4 iMouse;
-    
+
     #define time iTime
     #define MAX_STEPS 150
     #define MIN_DIST 0.001
     #define MAX_DIST 200.
     in vec2 fragCoord;
     out vec4 fragColor;
-    
-    
+
+
     mat2 rotate(float angle) {
         //angle *= 0.017453;
         float c = cos(angle);
         float s = sin(angle);
         return mat2(c, -s, s, c);
     }
-    
+
     float sd_sphere(vec3 p, float radius) {
         return length(p) - radius;
     }
-    
+
     float sd_box(vec3 p, vec3 b) {
         vec3 d = abs(p) - b;
         return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
     }
-    
+
     float sd_torus(vec3 p, float radius1, float radius2) {
         float x = length(p.xz) - radius1;
         return length(vec2(x, p.y)) - radius2;
     }
-    
+
     float sd_capsule(vec3 p, vec3 b, float radius) {
-    
+
         float d = dot(b, p) / dot(b, b);
         if (d <= 0.0) return length(p) - radius;
         if (d >= 1.0) return length(p - b) - radius;
         return length((b * d) - p) - radius;
     }
-    
+
     float sd_inf_cylinder(vec3 p, float radius) {
         return length(p.xz) - radius;
     }
-    
+
     float map(vec3 p) {
         p -= vec3(-0.5, 0.0, 0.7);
         vec3 point = p - vec3(0., 1., 2.);
@@ -363,19 +394,19 @@ fn create_shaders() -> (String, String) {
         d = min(d, sd_sphere(p - vec3(1.5, 0.4, 1.6), 0.9));
         return d;
     }
-    
+
     vec3 get_normal(vec3 p) {
         vec2 e = vec2(0.001, -0.001);
         vec3 a = p + e.yxx;
         vec3 b = p + e.xyx;
         vec3 c = p + e.xxy;
         vec3 d = p + e.yyy;
-    
+
         float fa = map(a);
         float fb = map(b);
         float fc = map(c);
         float fd = map(d);
-    
+
         return normalize(
             e.yxx * fa +
             e.xyx * fb +
@@ -383,16 +414,16 @@ fn create_shaders() -> (String, String) {
             e.yyy * fd
         );
     }
-    
+
     vec2 ray_march(vec3 ray_origin, vec3 ray_direction) {
         vec3 color = vec3(0, 0, 0);
         float total_distance = 0.;
-    
+
         int i = 0;
         for (; i < MAX_STEPS; i++) {
             float d = map(ray_origin);
             total_distance += d;
-    
+
             if (d < 0.) {
                 color.z = 1.;
                 return vec2(total_distance, float(i));
@@ -405,55 +436,55 @@ fn create_shaders() -> (String, String) {
                 color.y = 1.;
                 return vec2(total_distance, float(i));
             }
-    
+
             ray_origin += ray_direction * d;
         }
         //color.z = 1.;
         return vec2(total_distance, float(i));
     }
-    
+
     void main() {
         vec2 uv = (fragCoord / iResolution.xy - 0.5) * 2.;
         uv.x *= aspect;
-    
+
         vec3 ray_direction = normalize(vec3(uv, 1.));
         ray_direction *= rotation_matrix;
-    
-        vec2 dist_and_color = ray_march(camera_position, ray_direction); 
-    
+
+        vec2 dist_and_color = ray_march(camera_position, ray_direction);
+
         vec3 normal = get_normal(dist_and_color.x * ray_direction + camera_position);
-    
-        float shade = dot(normal, normalize(vec3(0.2, 1, 0.5))); 
-    
+
+        float shade = dot(normal, normalize(vec3(0.2, 1, 0.5)));
+
         fragColor = vec4(vec3(dist_and_color.y / MAX_STEPS. * 2, .0, .0), 1.);
     }");
     */
     (vertex_shader_src, fragment_shader_src)
 }
 
-
 fn create_context() -> (Display, glium::glutin::event_loop::EventLoop<()>) {
-        // 1. The **winit::EventsLoop** for handling events.
-        let events_loop = glium::glutin::event_loop::EventLoop::new();
+    // 1. The **winit::EventsLoop** for handling events.
+    let events_loop = glium::glutin::event_loop::EventLoop::new();
 
-        // 2. Parameters for building the Window.
-        let wb = glium::glutin::window::WindowBuilder::new()
-            .with_inner_size(glium::glutin::dpi::LogicalSize::new(450.0, 450.0))
-            .with_title("Constructor");
-    
-        // 3. Parameters for building the OpenGL context.
-        let cb = glium::glutin::ContextBuilder::new().with_hardware_acceleration(Some(true)).with_vsync(true);
-    
-        // 4. Build the Display with the given window and OpenGL context parameters and register the
-        //    window with the events_loop.
-        let display = glium::Display::new(wb, cb, &events_loop).unwrap();
+    // 2. Parameters for building the Window.
+    let wb = glium::glutin::window::WindowBuilder::new()
+        .with_inner_size(glium::glutin::dpi::LogicalSize::new(DIS_WIDTH, DIS_HIEGHT))
+        .with_title("Constructor");
 
-        (display, events_loop)
+    // 3. Parameters for building the OpenGL context.
+    let cb = glium::glutin::ContextBuilder::new()
+        .with_hardware_acceleration(Some(true))
+        .with_vsync(true);
+
+    // 4. Build the Display with the given window and OpenGL context parameters and register the
+    //    window with the events_loop.
+    let display = glium::Display::new(wb, cb, &events_loop).unwrap();
+
+    (display, events_loop)
 }
 
-
-pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_loop::EventLoop<()>) {
-
+pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_loop::EventLoop<()>)
+{
     let (display, events_loop) = create_context();
 
     let (vertex_buffer, indices_buffer) = create_buffers(&display);
@@ -464,8 +495,9 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
         &display,
         vertex_shader_src.as_str(),
         fragment_shader_src.as_str(),
-        None
-    ).unwrap();
+        None,
+    )
+    .unwrap();
 
     let (display_width, display_height) = display.get_framebuffer_dimensions();
 
@@ -475,6 +507,7 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
         display_width: display_width,
         display_height: display_height,
         time: time::SystemTime::now(),
+        static_time: 0.0,
         delta_time: time::SystemTime::now(),
         camera_position: [0.0, 1.0, 0.0],
         xyz_change: [1.0, 1.0, 1.0],
@@ -499,6 +532,21 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
         camera_speed: 200.,
     };
 
+    let args: Vec<String> = env::args().collect();
+
+    let is_video = if args.len() > 2 {
+        args[2] == "-v"
+    } else {
+        false
+    };
+
+    let max_video_time = if args.len() > 3 {
+        let result = args[3].parse::<f32>().unwrap();
+        result
+    } else {
+        0.0f32
+    };
+
     (
         RenderData {
             display: display,
@@ -507,56 +555,76 @@ pub fn create_render_data_and_eventloop() -> (RenderData, glium::glutin::event_l
             indices_buffer: indices_buffer,
             frame_input: frame_input,
             frame_counter: 0u32,
+            is_video: is_video,
+            max_video_time: max_video_time,
         },
-        events_loop
+        events_loop,
     )
 }
 
-
-pub fn render_frame(render_data: &mut RenderData) {
-
+pub fn render_frame(render_data: &mut RenderData) -> bool {
     let mut frame = render_data.display.draw();
 
     let shader_input = render_data.frame_input.calculate_data();
 
-    frame.draw(
-        &render_data.vertex_buffer,
-        &render_data.indices_buffer,
-        &render_data.program,
-        &uniform! {
-            aspect: shader_input.aspect,
-            camera_position: shader_input.camera_position,
-            rotation_matrix: shader_input.rotation_matrix,
-            xyz_change: shader_input.xyz_change,
-            iResolution: shader_input.shader_toy_input.i_resolution,
-            iTime: shader_input.shader_toy_input.i_time,
-            iTimeDelta: shader_input.shader_toy_input.i_time_delta,
-            iFrame: shader_input.shader_toy_input.i_frame,
-            iFrameRate: shader_input.shader_toy_input.i_frame_rate,
-            iMouse: shader_input.shader_toy_input.i_mouse,
+    frame
+        .draw(
+            &render_data.vertex_buffer,
+            &render_data.indices_buffer,
+            &render_data.program,
+            &uniform! {
+                aspect: shader_input.aspect,
+                camera_position: shader_input.camera_position,
+                rotation_matrix: shader_input.rotation_matrix,
+                xyz_change: shader_input.xyz_change,
+                iResolution: shader_input.shader_toy_input.i_resolution,
+                iTime: shader_input.shader_toy_input.i_time,
+                iTimeDelta: shader_input.shader_toy_input.i_time_delta,
+                iFrame: shader_input.shader_toy_input.i_frame,
+                iFrameRate: shader_input.shader_toy_input.i_frame_rate,
+                iMouse: shader_input.shader_toy_input.i_mouse,
+                iStaticTime: shader_input.static_time,
 
-        },
-        &glium::draw_parameters::DrawParameters::default()
-    ).unwrap();
+            },
+            &glium::draw_parameters::DrawParameters::default(),
+        )
+        .unwrap();
 
     frame.finish().unwrap();
 
-    let frame_texture: Vec<Vec<(u8, u8, u8, u8)>> = render_data.display.read_front_buffer().unwrap();
-    // println!("{}, {}", frame_texture.len(), frame_texture[0].len());
-    let image_buffer = image::ImageBuffer::from_fn(
-        render_data.frame_input.display_width,
-        render_data.frame_input.display_height,
-        |x, y| {
-            let (r, g, b, a) = frame_texture[y as usize][x as usize];
-            image::Rgba([r, g, b, a])
-        }
-    );
+    if render_data.is_video {
+        let frame_texture: Vec<Vec<(u8, u8, u8, u8)>> =
+            render_data.display.read_front_buffer().unwrap();
+        // println!("{}, {}", frame_texture.len(), frame_texture[0].len());
+        let image_buffer = image::ImageBuffer::from_fn(
+            render_data.frame_input.display_width,
+            render_data.frame_input.display_height,
+            |x, y| {
+                let (r, g, b, a) = frame_texture[y as usize][x as usize];
+                image::Rgba([r, g, b, a])
+            },
+        );
 
-    let path = format!("{}{}{}", "/home/maffi44/Pictures/fractal/", render_data.frame_counter.to_string().as_str(), ".png");
+        let path = format!(
+            "{}{}{}",
+            "/home/maffi44/Pictures/fractal/",
+            render_data.frame_counter.to_string().as_str(),
+            ".png"
+        );
 
-    image_buffer.save(path).expect("can not save");
-    
+        image_buffer.save(path).expect("can not save");
+    }
+
     render_data.frame_counter += 1;
 
     render_data.frame_input.delta_time = time::SystemTime::now();
+
+    if render_data.is_video {
+        if render_data.frame_input.static_time >= render_data.max_video_time {
+            return true;
+        }
+    }
+    //println!("{}", shader_input.shader_toy_input.i_time);
+    return false;
+
 }

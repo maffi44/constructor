@@ -9,6 +9,7 @@ uniform float iTimeDelta;
 uniform int iFrame;
 uniform float iFrameRate;
 uniform vec4 iMouse;
+uniform float iStaticTime;
 
 uniform float powe = 2.0;
 
@@ -19,8 +20,6 @@ uniform float powe = 2.0;
 #define MAX_DIST 1000.
 in vec2 fragCoord;
 out vec4 fragColor;
-
-#define BO
 
 
 mat2 rotate(float angle) {
@@ -56,22 +55,8 @@ float sd_inf_cylinder(vec3 p, float radius) {
     return length(p.xz) - radius;
 }
 
-// float map(vec3 p) {
-//     vec3 point = p;
-
-//     point.x = mod(point.x, 3.0) - 1.5;
-//     point.z += float(floor(point.x * 2));
-
-//     point -= vec3(0., 1., 3.);
-//     //point.xz *= rotate(iTime / 1.8);
-
-//     float d = sd_box(point, vec3(1., 1., 1.));
-
-//     return d;
-// }
-
-float map(vec3 position) {
-    float power = powe + (cos(iTime / 20.0) + 1.0) * 5.0;
+float sd_mandelbrod(vec3 position) {
+    float power = powe;
     vec3 p = position;
     float dr = 1.0;
     float r;
@@ -91,6 +76,24 @@ float map(vec3 position) {
         p += position;
     }
     return 0.5 * log(r) * r / dr;
+}
+
+float map(vec3 p) {
+    vec3 point = p;
+    //point.xz *= rotate(sin(iTime * 0.5));
+    // point.x = mod(point.x, 3.0) - 1.5;
+    // point.z += float(floor(point.x * 2));
+
+    // point -= vec3(0., 1., 3.);
+    //point.xz *= rotate(iTime / 1.8);
+
+    //float d = sd_sphere(point, 0.26);
+    float d = sd_box(point, vec3(0.26));
+    d = max(sd_mandelbrod(point + vec3(0.3, 0.5, 0.1) * 0.9), d);
+    d = mix(d, sd_mandelbrod(point), (cos(iStaticTime * PI) * 0.5) + 0.5);
+    //d = sd_mandelbrod(point);
+
+    return d;
 }
 
 vec3 get_normal(vec3 p) {
@@ -148,7 +151,10 @@ void main() {
     vec3 ray_direction = normalize(vec3(uv, 1.));
     ray_direction *= rotation_matrix;
 
-    vec2 dist_and_depth = ray_march(camera_position, ray_direction); 
+    ray_direction.yz *= rotate(0.87);
+    ray_direction.xz *= rotate(PI * 0.7);
+
+    vec2 dist_and_depth = ray_march(camera_position + vec3(0.9, 0.5, 0.6), ray_direction); 
 
     vec3 normal = get_normal(dist_and_depth.x * ray_direction + camera_position);
 
@@ -156,5 +162,5 @@ void main() {
 
     shade = clamp(shade, 0.4, 1.0);
 
-    fragColor = vec4(vec3(dist_and_depth.y / MAX_STEPS. * (shade * 2.5), .0, .0), 1.);
+    fragColor = vec4(vec3(dist_and_depth.y * 1.6 / MAX_STEPS. * (shade * 2.5), dist_and_depth.y * 0.003, 1.0), 1.);
 }

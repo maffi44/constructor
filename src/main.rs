@@ -120,7 +120,9 @@ fn main() {
             },
             glium::glutin::event::Event::RedrawRequested(_) => {
 
-                render_frame(&mut render_data);
+                if render_frame(&mut render_data) {
+                    *control_flow = ControlFlow::Exit
+                }
             },
             glium::glutin::event::Event::MainEventsCleared => {
                 render_data.display.gl_window().window().request_redraw();
